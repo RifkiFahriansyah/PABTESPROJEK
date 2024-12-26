@@ -1,56 +1,35 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:projek_bounty_hunter/models/candi.dart';
 
 class DetailScreen extends StatefulWidget {
   final Candi candi;
-  const DetailScreen({super.key, required this.candi});
+  final Function(Candi) onFavoriteToggle;
+
+  const DetailScreen({
+    super.key,
+    required this.candi,
+    required this.onFavoriteToggle,
+  });
 
   @override
   State<DetailScreen> createState() => _DetailScreenState();
 }
 
 class _DetailScreenState extends State<DetailScreen> {
-  bool isFavorite = false;
-  bool isSignedIn = false;
+  late bool isFavorite;
 
   @override
   void initState() {
     super.initState();
-    _checkSignStatus();
-    _loadFavoriteStatus();
+    isFavorite = widget.candi.isFavorite;
   }
 
-  Future<void> _checkSignStatus() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    setState(() {
-      isSignedIn = prefs.getBool('isSignedIn') ?? false;
-    });
-  }
-
-  Future<void> _loadFavoriteStatus() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    String key = 'favorite_${widget.candi.name.replaceAll(' ', '_')}';
-    setState(() {
-      isFavorite = prefs.getBool(key) ?? false;
-    });
-  }
-
-  Future<void> _toggleFavorite() async {
-    if (!isSignedIn) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        Navigator.pushReplacementNamed(context, '/signin');
-      });
-      return;
-    }
-
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    String key = 'favorite_${widget.candi.name.replaceAll(' ', '_')}';
+  void _toggleFavorite() {
     setState(() {
       isFavorite = !isFavorite;
     });
-    await prefs.setBool(key, isFavorite);
+    widget.onFavoriteToggle(widget.candi);
   }
 
   @override
@@ -98,7 +77,6 @@ class _DetailScreenState extends State<DetailScreen> {
                         ),
                       ),
                     ),
-                    // tombol back kustom
                     Padding(
                       padding: const EdgeInsets.symmetric(
                           horizontal: 16, vertical: 20),
@@ -123,42 +101,35 @@ class _DetailScreenState extends State<DetailScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      //info atas
-                      const SizedBox(
-                        height: 16,
-                      ),
+                      const SizedBox(height: 16),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text(
                             widget.candi.name,
                             style: const TextStyle(
-                                fontSize: 20, fontWeight: FontWeight.bold),
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                           IconButton(
                             icon: Icon(
-                              isSignedIn && isFavorite
-                                  ? Icons.star
-                                  : Icons.star_border,
-                              color: isSignedIn && isFavorite
-                                  ? Colors.yellowAccent
-                                  : null,
+                              isFavorite ? Icons.star : Icons.star_border,
+                              color: isFavorite ? Colors.yellowAccent : null,
                             ),
                             onPressed: _toggleFavorite,
                             iconSize: 30,
                           ),
                         ],
                       ),
-                      //info tengah
+                      const SizedBox(height: 16),
                       Row(
                         children: [
                           const Icon(
                             Icons.place,
                             color: Colors.red,
                           ),
-                          const SizedBox(
-                            width: 8,
-                          ),
+                          const SizedBox(width: 8),
                           const SizedBox(
                             width: 70,
                             child: Text(
@@ -175,9 +146,7 @@ class _DetailScreenState extends State<DetailScreen> {
                             Icons.calendar_month,
                             color: Colors.green,
                           ),
-                          const SizedBox(
-                            width: 8,
-                          ),
+                          const SizedBox(width: 8),
                           const SizedBox(
                             width: 70,
                             child: Text(
@@ -194,9 +163,7 @@ class _DetailScreenState extends State<DetailScreen> {
                             Icons.house,
                             color: Colors.amber,
                           ),
-                          const SizedBox(
-                            width: 8,
-                          ),
+                          const SizedBox(width: 8),
                           const SizedBox(
                             width: 70,
                             child: Text(
@@ -207,16 +174,9 @@ class _DetailScreenState extends State<DetailScreen> {
                           Text(': ${widget.candi.type}')
                         ],
                       ),
-                      const SizedBox(
-                        height: 16,
-                      ),
-                      Divider(
-                        color: Colors.deepPurple.shade100,
-                      ),
-                      const SizedBox(
-                        height: 16,
-                      ),
-                      //info bawah
+                      const SizedBox(height: 16),
+                      Divider(color: Colors.deepPurple.shade100),
+                      const SizedBox(height: 16),
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -227,23 +187,18 @@ class _DetailScreenState extends State<DetailScreen> {
                               fontSize: 14,
                             ),
                           ),
-                          const SizedBox(
-                            height: 4,
-                          ),
+                          const SizedBox(height: 4),
                           SizedBox(
                             child: Text(widget.candi.description),
                           ),
                         ],
                       ),
-                      //info galery
                       Padding(
                         padding: const EdgeInsets.all(15),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Divider(
-                              color: Colors.deepPurple.shade100,
-                            ),
+                            Divider(color: Colors.deepPurple.shade100),
                             const Text(
                               'Galeri',
                               style: TextStyle(
@@ -251,9 +206,7 @@ class _DetailScreenState extends State<DetailScreen> {
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
-                            const SizedBox(
-                              height: 10,
-                            ),
+                            const SizedBox(height: 10),
                             SizedBox(
                               height: 100,
                               child: ListView.builder(
@@ -261,7 +214,7 @@ class _DetailScreenState extends State<DetailScreen> {
                                 itemCount: widget.candi.imageUrls.length,
                                 itemBuilder: (context, index) {
                                   return Padding(
-                                    padding: EdgeInsets.only(right: 8),
+                                    padding: const EdgeInsets.only(right: 8),
                                     child: GestureDetector(
                                       onTap: () {},
                                       child: Container(
@@ -290,14 +243,16 @@ class _DetailScreenState extends State<DetailScreen> {
                                                           Container(
                                                     width: 120,
                                                     height: 120,
-                                                    color: Colors.deepPurple[50],
+                                                    color: Colors
+                                                        .deepPurple[50],
                                                   ),
-                                                  errorWidget: (context, url, error) =>
-                                                      const Icon(Icons.error),
+                                                  errorWidget:
+                                                      (context, url, error) =>
+                                                          const Icon(
+                                                              Icons.error),
                                                 )
                                               : Image.asset(
-                                                  widget
-                                                      .candi.imageUrls[index],
+                                                  widget.candi.imageUrls[index],
                                                   width: 120,
                                                   height: 120,
                                                   fit: BoxFit.cover,
@@ -309,9 +264,7 @@ class _DetailScreenState extends State<DetailScreen> {
                                 },
                               ),
                             ),
-                            const SizedBox(
-                              height: 4,
-                            ),
+                            const SizedBox(height: 4),
                             const Text(
                               'Tap untuk memperbesar',
                               style: TextStyle(

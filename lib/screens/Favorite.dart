@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:projek_bounty_hunter/data/candi_data.dart';
 import 'package:projek_bounty_hunter/models/candi.dart';
-import 'package:projek_bounty_hunter/screens/Detail.dart'; 
+import 'package:projek_bounty_hunter/screens/Detail.dart';
 
 class FavoriteScreen extends StatefulWidget {
   const FavoriteScreen({super.key});
@@ -37,8 +37,24 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
       favorites = tempFavorites;
     });
 
-     await prefs.setInt('favoriteCandiCount', tempFavorites.length);
-  }  
+    await prefs.setInt('favoriteCandiCount', tempFavorites.length);
+  }
+
+  Future<void> _toggleFavorite(Candi candi) async {
+  SharedPreferences prefs = await SharedPreferences.getInstance();
+  String key = 'favorite_${candi.name.replaceAll(' ', '_')}';
+  bool currentStatus = prefs.getBool(key) ?? false;
+
+  await prefs.setBool(key, !currentStatus);
+
+  setState(() {
+    candi.isFavorite = !currentStatus; // Update the UI state
+  });
+
+  // Refresh favorite list after updating
+  _loadFavorites(); 
+}
+
 
   @override
   Widget build(BuildContext context) {
@@ -59,13 +75,19 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
                   itemBuilder: (context, index) {
                     final candi = favorites[index];
                     return GestureDetector(
-                      onTap: () {
-                        Navigator.push(
+                      onTap: () async {
+                        await Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => DetailScreen(candi: candi),
+                            builder: (context) => DetailScreen(
+                              candi: candi,
+                              onFavoriteToggle: (updatedCandi) {
+                                _toggleFavorite(updatedCandi);
+                              },
+                            ),
                           ),
                         );
+                        _loadFavorites();
                       },
                       child: Card(
                         color: const Color.fromRGBO(252, 250, 237, 1),
@@ -82,11 +104,38 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
                                 tag: candi.imageAsset,
                                 child: ClipRRect(
                                   borderRadius: BorderRadius.circular(15),
-                                  child: Image.asset(
-                                    candi.imageAsset,
-                                    width: double.infinity,
-                                    fit: BoxFit.cover,
-                                  ),
+                                  child: candi.imageAsset.startsWith('http')
+                                      ? Image.network(
+                                          candi.imageAsset,
+                                          width: double.infinity,
+                                          fit: BoxFit.cover,
+                                          loadingBuilder: (context, child,
+                                              loadingProgress) {
+                                            if (loadingProgress == null) {
+                                              return child;
+                                            }
+                                            return Center(
+                                              child: CircularProgressIndicator(
+                                                value: loadingProgress
+                                                            .expectedTotalBytes !=
+                                                        null
+                                                    ? loadingProgress
+                                                            .cumulativeBytesLoaded /
+                                                        loadingProgress
+                                                            .expectedTotalBytes!
+                                                    : null,
+                                              ),
+                                            );
+                                          },
+                                          errorBuilder:
+                                              (context, error, stackTrace) =>
+                                                  const Icon(Icons.error),
+                                        )
+                                      : Image.asset(
+                                          candi.imageAsset,
+                                          width: double.infinity,
+                                          fit: BoxFit.cover,
+                                        ),
                                 ),
                               ),
                             ),

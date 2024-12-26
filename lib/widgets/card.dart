@@ -4,14 +4,27 @@ import 'package:projek_bounty_hunter/screens/Detail.dart';
 
 class ItemCard extends StatelessWidget {
   final Candi candi;
+  final Function(Candi) onFavoriteToggle; // Callback untuk favorit
 
-  const ItemCard({super.key, required this.candi});
+  const ItemCard({
+    super.key,
+    required this.candi,
+    required this.onFavoriteToggle,
+  });
 
   @override
   Widget build(BuildContext context) {
     return InkWell(
       onTap: () {
-        Navigator.push(context, MaterialPageRoute(builder: (context) => DetailScreen(candi: candi)));
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => DetailScreen(
+              candi: candi,
+              onFavoriteToggle: onFavoriteToggle, // Operkan callback
+            ),
+          ),
+        );
       },
       child: Card(
         color: const Color.fromRGBO(252, 250, 237, 1),
@@ -34,16 +47,16 @@ class ItemCard extends StatelessWidget {
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(15),
                     child: candi.imageAsset.startsWith('http')
-                      ? Image.network(
-                          candi.imageAsset, // URL gambar
-                          width: double.infinity,
-                          fit: BoxFit.cover,
-                        )
-                      : Image.asset(
-                          candi.imageAsset, // Path lokal gambar
-                          width: double.infinity,
-                          fit: BoxFit.cover,
-                        ),
+                        ? Image.network(
+                            candi.imageAsset, // URL gambar
+                            width: double.infinity,
+                            fit: BoxFit.cover,
+                          )
+                        : Image.asset(
+                            candi.imageAsset, // Path lokal gambar
+                            width: double.infinity,
+                            fit: BoxFit.cover,
+                          ),
                   ),
                 ),
               ),
@@ -52,18 +65,34 @@ class ItemCard extends StatelessWidget {
               padding: const EdgeInsets.only(left: 16),
               child: Text(
                 candi.name,
-                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
             Padding(
               padding: const EdgeInsets.only(left: 16),
-              child: Text(candi.type, style: const TextStyle(fontSize: 12)),
+              child: Text(
+                candi.type,
+                style: const TextStyle(fontSize: 12),
+              ),
             ),
-            const Padding(
-              padding: EdgeInsets.only(right: 7.0, bottom: 7.0),
+            Padding(
+              padding: const EdgeInsets.only(right: 7.0, bottom: 7.0),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.end,
-                children: [Icon(Icons.star_border_outlined)],
+                children: [
+                  GestureDetector(
+                    onTap: () {
+                      onFavoriteToggle(candi); // Ubah status favorit
+                    },
+                    child: Icon(
+                      candi.isFavorite ? Icons.star : Icons.star_border,
+                      color: candi.isFavorite ? Colors.yellow : Colors.grey,
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
@@ -72,4 +101,3 @@ class ItemCard extends StatelessWidget {
     );
   }
 }
-

@@ -71,7 +71,7 @@ void _signIn() async {
           prefs.setBool('isSignedIn', true);
 
           // Arahkan ke MainScreen setelah login berhasil
-          Navigator.pushReplacementNamed(context, '/');
+          Navigator.pushReplacementNamed(context, '/mainscreen');
           print('Sign in succeeded!');
         } else {
           setState(() {

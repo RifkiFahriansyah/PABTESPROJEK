@@ -32,7 +32,7 @@ class MyApp extends StatelessWidget {
             child: Image.asset("images/Logo MDP.jpeg"),
           ),
           
-          nextScreen: const MainScreen(),
+          nextScreen: const SignInScreen(),
         ),
       initialRoute: '/',
       routes: {
