@@ -19,87 +19,85 @@ class _SignInScreenState extends State<SignInScreen> {
   bool _isSigned = false;
   bool _obscurePassword = true;
 
- Future<Map<String, String>> _retrieveAndDecryptDataFromPrefs(
-  SharedPreferences sharedPreferences,
-) async {
-  try {
-    final encryptedUsername = sharedPreferences.getString('username');
-    final encryptedPassword = sharedPreferences.getString('password');
-    final keyString = sharedPreferences.getString('key');
-    final ivString = sharedPreferences.getString('iv');
+  Future<Map<String, String>> _retrieveAndDecryptDataFromPrefs(
+    SharedPreferences sharedPreferences,
+  ) async {
+    try {
+      final encryptedUsername = sharedPreferences.getString('username');
+      final encryptedPassword = sharedPreferences.getString('password');
+      final keyString = sharedPreferences.getString('key');
+      final ivString = sharedPreferences.getString('iv');
 
-    if (encryptedUsername == null ||
-        encryptedPassword == null ||
-        keyString == null ||
-        ivString == null) {
-      throw Exception('Missing credentials in SharedPreferences.');
+      if (encryptedUsername == null ||
+          encryptedPassword == null ||
+          keyString == null ||
+          ivString == null) {
+        throw Exception('Missing credentials in SharedPreferences.');
+      }
+
+      final encrypt.Key key = encrypt.Key.fromBase64(keyString);
+      final encrypt.IV iv = encrypt.IV.fromBase64(ivString);
+      final encrypter = encrypt.Encrypter(encrypt.AES(key));
+
+      final decryptedUsername = encrypter.decrypt64(encryptedUsername, iv: iv);
+      final decryptedPassword = encrypter.decrypt64(encryptedPassword, iv: iv);
+
+      return {'username': decryptedUsername, 'password': decryptedPassword};
+    } catch (e) {
+      print('Decryption failed: $e');
+      return {};
     }
-
-    final encrypt.Key key = encrypt.Key.fromBase64(keyString);
-    final encrypt.IV iv = encrypt.IV.fromBase64(ivString);
-    final encrypter = encrypt.Encrypter(encrypt.AES(key));
-
-    final decryptedUsername = encrypter.decrypt64(encryptedUsername, iv: iv);
-    final decryptedPassword = encrypter.decrypt64(encryptedPassword, iv: iv);
-
-    return {'username': decryptedUsername, 'password': decryptedPassword};
-  } catch (e) {
-    print('Decryption failed: $e');
-    return {};
   }
-}
 
-void _signIn() async {
-  try {
-    final prefs = await SharedPreferences.getInstance();
+  void _signIn() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
 
-    final String username = _usernameController.text;
-    final String password = _passwordController.text;
-    print('Sign in attempt: Username: $username, Password: $password');
+      final String username = _usernameController.text;
+      final String password = _passwordController.text;
+      print('Sign in attempt: Username: $username, Password: $password');
 
-    if (username.isNotEmpty && password.isNotEmpty) {
-      final data = await _retrieveAndDecryptDataFromPrefs(prefs);
+      if (username.isNotEmpty && password.isNotEmpty) {
+        final data = await _retrieveAndDecryptDataFromPrefs(prefs);
 
-      if (data.isNotEmpty) {
-        final decryptedUsername = data['username'];
-        final decryptedPassword = data['password'];
+        if (data.isNotEmpty) {
+          final decryptedUsername = data['username'];
+          final decryptedPassword = data['password'];
 
-        if (username == decryptedUsername && password == decryptedPassword) {
-          setState(() {
-            _isSigned = true;
-          });
-          prefs.setBool('isSignedIn', true);
+          if (username == decryptedUsername && password == decryptedPassword) {
+            setState(() {
+              _isSigned = true;
+            });
+            prefs.setBool('isSignedIn', true);
 
-          // Arahkan ke MainScreen setelah login berhasil
-          Navigator.pushReplacementNamed(context, '/mainscreen');
-          print('Sign in succeeded!');
+            // Arahkan ke MainScreen setelah login berhasil
+            Navigator.pushReplacementNamed(context, '/mainscreen');
+            print('Sign in succeeded!');
+          } else {
+            setState(() {
+              _errorText = 'Username atau kata sandi salah';
+            });
+            print('Username or password is incorrect');
+          }
         } else {
           setState(() {
-            _errorText = 'Username atau kata sandi salah';
+            _errorText = 'No stored credentials found or decryption failed.';
           });
-          print('Username or password is incorrect');
+          print('No stored credentials found');
         }
       } else {
         setState(() {
-          _errorText = 'No stored credentials found or decryption failed.';
+          _errorText = 'Username dan kata sandi tidak boleh kosong.';
         });
-        print('No stored credentials found');
+        print('Username and password cannot be empty');
       }
-    } else {
+    } catch (e) {
+      print('An error occurred: $e');
       setState(() {
-        _errorText = 'Username dan kata sandi tidak boleh kosong.';
+        _errorText = 'Terjadi kesalahan saat proses login.';
       });
-      print('Username and password cannot be empty');
     }
-  } catch (e) {
-    print('An error occurred: $e');
-    setState(() {
-      _errorText = 'Terjadi kesalahan saat proses login.';
-    });
   }
-}
-
-
 
   @override
   Widget build(BuildContext context) {
@@ -137,7 +135,9 @@ void _signIn() async {
                       border: const OutlineInputBorder(),
                       suffixIcon: IconButton(
                         icon: Icon(
-                          _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                          _obscurePassword
+                              ? Icons.visibility_off
+                              : Icons.visibility,
                         ),
                         onPressed: () {
                           setState(() {
@@ -159,7 +159,8 @@ void _signIn() async {
                   RichText(
                     text: TextSpan(
                       text: 'Belum punya Akun?',
-                      style: const TextStyle(fontSize: 16, color: Colors.deepPurple),
+                      style: const TextStyle(
+                          fontSize: 16, color: Colors.deepPurple),
                       children: <TextSpan>[
                         TextSpan(
                           text: ' Daftar Disini',
@@ -168,8 +169,11 @@ void _signIn() async {
                             decoration: TextDecoration.underline,
                             fontSize: 16,
                           ),
-                          recognizer: TapGestureRecognizer()..onTap = () {Navigator.pushNamed(context, '/signup');
-                          },
+                          recognizer: TapGestureRecognizer()
+                            ..onTap = () {
+                              Navigator.pushReplacementNamed(
+                                  context, '/signup');
+                            },
                         ),
                       ],
                     ),

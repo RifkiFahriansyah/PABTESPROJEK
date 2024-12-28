@@ -169,7 +169,7 @@ void _signUp() async {
                             decoration: TextDecoration.underline,
                             fontSize: 16,
                           ),
-                          recognizer: TapGestureRecognizer()..onTap = () { Navigator.pushNamed(context, '/signin');
+                          recognizer: TapGestureRecognizer()..onTap = () { Navigator.pushReplacementNamed(context, '/signin');
                           },
                         ),
                       ],

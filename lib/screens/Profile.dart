@@ -27,9 +27,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   // Fungsi untuk Logout, menghapus data yang tersimpan
   Future<void> logOut() async {
-    final SharedPreferences prefs = await SharedPreferences.getInstance();
-    await prefs.clear(); // Clear all stored data
-
+   final SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('isSignedIn', false);
+    // await prefs.setString('name', '');
+    // await prefs.setString('username', '');
+    // await prefs.setString('password', '');
     Navigator.pushReplacementNamed(context, '/signin');
   }
 
